@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-struct epoll_poller_s {
+typedef struct epoll_poller_s {
     struct poller_s poller;
     int epfd;
     struct epoll_event* events; 
-};
+} epoll_poller_t;
 
 int epoll_event_operation(int fd, 
                           poller_t* poller, 
@@ -16,7 +16,7 @@ int epoll_event_operation(int fd,
                           void* data)
 {
     struct epoll_event ev;
-    struct epoll_poller_s* epoll_poller = (struct epoll_poller_s*)poller; 
+    epoll_poller_t* epoll_poller = (epoll_poller_t*)poller; 
     ev.data.fd = fd;
     ev.data.ptr = data;
     ev.events = 0;
@@ -48,7 +48,7 @@ int epoll_event_operation(int fd,
 
 int epoll_dispatch(poller_t* poller, void* events, int size)
 {
-    struct epoll_poller_s* epoll_poller = (struct epoll_poller_s*)poller;
+    epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
     struct epoll_event* e = events;
     for (int i = 0; i < size; i++) {
         uint32_t revents = e->events;
@@ -67,21 +67,23 @@ int epoll_dispatch(poller_t* poller, void* events, int size)
         if (revents & EPOLLOUT) {
             type |= EVENT_WRITE;
         }
-        epoll_poller->poller.handle_event(e->data.ptr, type);
+        if (epoll_poller->poller.handle_event) {
+            epoll_poller->poller.handle_event(e->data.ptr, type);
+        }
         e++;
     }
 }
 
 int epoll_loop(poller_t* poller)
 {
-    struct epoll_poller_s* epoll_poller = (struct epoll_poller_s*)poller;
+    epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
     do {
         int rc = epoll_wait(epoll_poller->epfd, epoll_poller->events, epoll_poller->poller.poll_size, epoll_poller->poller.timeout);
         /* error when rc == -1 */
         if (rc == -1) {
             return -1;
         }
-        if (rc > 0) {
+        if (rc > 0 && epoll_poller->poller.dispatch) {
             epoll_poller->poller.dispatch(poller, epoll_poller->events, rc);
         }
         
@@ -91,7 +93,7 @@ int epoll_loop(poller_t* poller)
 
 poller_t* poller_epoll_create()
 {
-    struct epoll_poller_s* epoll_poller = (struct epoll_poller_s*)malloc(sizeof(struct epoll_poller_s));
+    epoll_poller_t* epoll_poller = (epoll_poller_t*)malloc(sizeof(struct epoll_poller_s));
     if (epoll_poller != NULL) {
         epoll_poller->poller.listen_fd = -1;
         epoll_poller->poller.timeout = -1;
@@ -107,7 +109,7 @@ poller_t* poller_epoll_create()
 
 int poller_epoll_initialize(poller_t* poller)
 {
-    struct epoll_poller_s* epoll_poller = (struct epoll_poller_s*)poller;
+    epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
     epoll_poller->events = (struct epoll_event*)malloc(sizeof(struct epoll_event) * epoll_poller->poller.poll_size);
     if (epoll_poller->events == NULL) {
         return -1;
@@ -122,7 +124,7 @@ int poller_epoll_initialize(poller_t* poller)
 
 int poller_epoll_uninitialize(poller_t* poller)
 {
-    struct epoll_poller_s* epoll_poller = (struct epoll_poller_s*)poller;
+    epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
     if (epoll_poller == NULL) {
         return -1;
     }
