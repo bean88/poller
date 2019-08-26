@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <string.h>
 
-TcpSession::TcpSession(int fd, TcpServer* tcp_server)
-    : fd_(fd), tcp_server_(tcp_server)
+TcpSession::TcpSession(int fd, poller_t* poller)
+    : fd_(fd), poller_(poller)
 {
     
 }
@@ -29,8 +29,9 @@ int TcpSession::onRead()
         return -1;
     }
     //LOGD("received fd(%d) data: %.*s", fd_, size, buffer);
-    poller_t* poller = tcp_server_->getPoller();
-    poller->event_op(fd_, poller, OPERATION_MOD, EVENT_READ | EVENT_WRITE, this);
+    if (poller_) {
+        poller_->event_op(fd_, poller_, OPERATION_MOD, EVENT_READ | EVENT_WRITE, this);
+    }
     if ((++count % 10000) == 0) {
         LOGD("count: %lu", count);
     }
@@ -47,8 +48,9 @@ int TcpSession::onWrite()
         return -1;
     }
     //LOGD("send fd(%d) data: %.*s", fd_, size, buffer);
-    poller_t* poller = tcp_server_->getPoller();
-    poller->event_op(fd_, poller, OPERATION_MOD, EVENT_READ, this);
+    if (poller_) {
+        poller_->event_op(fd_, poller_, OPERATION_MOD, EVENT_READ, this);
+    }
     return 0;
 }
 

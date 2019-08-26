@@ -2,11 +2,9 @@
 #include "../src/poller.h"
 #include "poller_event_handler.h"
 
-class TcpServer;
-
 class TcpSession : public IPollerEventHandler{
 public:
-    TcpSession(int fd, TcpServer* tcp_server);
+    TcpSession(int fd, poller_t* poller);
     ~TcpSession();
     int onRead();
     int onWrite();
@@ -14,5 +12,5 @@ public:
     int handle(int type) override;
 private:
     int fd_;
-    TcpServer* tcp_server_;
+    poller_t* poller_;
 };

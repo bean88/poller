@@ -44,9 +44,11 @@ int TcpServer::init()
     }
     if (::bind(fd, (const struct sockaddr*)&addr, sizeof(addr)) < 0) {
         LOGD("bind to %s:%d faild, error: %s", host_.c_str(), local_port_, strerror(errno));
+        return -1;
     }
     if (::listen(fd, backlog_) < 0) {
         LOGD("failed to listen to %s:%d, error: %s", host_.c_str(), local_port_, strerror(errno));
+        return -1;
     }
     set_nodelay(fd, 1);
     set_nonblock(fd, 1);
@@ -84,7 +86,7 @@ int TcpServer::accept()
         return -1;
     }
     LOGD("fd(%d) connected", newfd);
-    TcpSession* session = new TcpSession(newfd, this);
+    TcpSession* session = new TcpSession(newfd, poller_);
     poller_->event_op(newfd, poller_, OPERATION_ADD, EVENT_READ, session);
     return 0;
 }
