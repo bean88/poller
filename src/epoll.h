@@ -3,9 +3,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-poller_t* poller_epoll_create();
-int poller_epoll_initialize(poller_t* poller);
-int poller_epoll_uninitialize(poller_t* poller);
+poller_t* epoll_poller_create();
+int epoll_poller_initialize(poller_t* poller);
+int epoll_poller_uninitialize(poller_t* poller);
 
 #ifdef __cplusplus
 }

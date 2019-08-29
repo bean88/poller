@@ -26,7 +26,7 @@ TcpServer::TcpServer(const char* host, uint16_t local_port, int backlog)
 TcpServer::~TcpServer()
 {
     if (poller_) {
-        poller_epoll_uninitialize(poller_);
+        epoll_poller_uninitialize(poller_);
         poller_ = nullptr;
     }
 }
@@ -52,12 +52,12 @@ int TcpServer::init()
     }
     set_nodelay(fd, 1);
     set_nonblock(fd, 1);
-    poller_ = poller_epoll_create();
+    poller_ = epoll_poller_create();
     if (poller_ == nullptr) {
         return -1;
     }
     poller_->listen_fd = fd;
-    if (poller_epoll_initialize(poller_) < 0) {
+    if (epoll_poller_initialize(poller_) < 0) {
         return -1;
     }
     poller_->handle_event = handlePollerEvent;

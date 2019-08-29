@@ -46,10 +46,10 @@ int epoll_event_operation(int fd,
     return rc;
 }
 
-int epoll_dispatch(poller_t* poller, void* events, int size)
+int epoll_dispatch(poller_t* poller, int size)
 {
     epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
-    struct epoll_event* e = events;
+    struct epoll_event* e = epoll_poller->events;
     for (int i = 0; i < size; i++) {
         uint32_t revents = e->events;
         /* add EPOLLIN and EPOLLOUT events to handle the error*/
@@ -84,14 +84,14 @@ int epoll_loop(poller_t* poller)
             return -1;
         }
         if (rc > 0 && epoll_poller->poller.dispatch) {
-            epoll_poller->poller.dispatch(poller, epoll_poller->events, rc);
+            epoll_poller->poller.dispatch(poller, rc);
         }
         
     } while (1);
     return 0;
 }
 
-poller_t* poller_epoll_create()
+poller_t* epoll_poller_create()
 {
     epoll_poller_t* epoll_poller = (epoll_poller_t*)malloc(sizeof(struct epoll_poller_s));
     if (epoll_poller != NULL) {
@@ -107,7 +107,7 @@ poller_t* poller_epoll_create()
     return (poller_t*)epoll_poller;
 }
 
-int poller_epoll_initialize(poller_t* poller)
+int epoll_poller_initialize(poller_t* poller)
 {
     epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
     epoll_poller->events = (struct epoll_event*)malloc(sizeof(struct epoll_event) * epoll_poller->poller.poll_size);
@@ -122,7 +122,7 @@ int poller_epoll_initialize(poller_t* poller)
     return 0;
 }
 
-int poller_epoll_uninitialize(poller_t* poller)
+int epoll_poller_uninitialize(poller_t* poller)
 {
     epoll_poller_t* epoll_poller = (epoll_poller_t*)poller;
     if (epoll_poller == NULL) {
